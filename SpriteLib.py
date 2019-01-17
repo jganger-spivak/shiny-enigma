@@ -9,6 +9,7 @@ class Sprite:
     self.cachex = x
     self.cachey = y
     self.isXP = False
+    self.isEnemy = False
   def translate(self, x, y):
     self.map.world[self.cachey][self.cachex] = self.cache
     self.cachex = x

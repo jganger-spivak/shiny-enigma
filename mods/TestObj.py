@@ -4,6 +4,9 @@ class TestObj(Sprite):
     def __init__(self, x, y, XP):
         Sprite.__init__(self, x, y, XP)
         self.char = "$"
-        self.info = "TestObj(2, 2, 0)"
-
-
+        self.x = 2
+        self.y = 2
+        self.XP = 0
+    def info():
+        return ["$", 2, 2, 0]
+    

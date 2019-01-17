@@ -68,6 +68,7 @@ class Sprite:
     self.cachex = x
     self.cachey = y
     self.isXP = False
+    self.isEnemy = False
   def translate(self, x, y):
     self.map.world[self.cachey][self.cachex] = self.cache
     self.cachex = x
@@ -82,6 +83,7 @@ class Sprite:
     2+2
     #do nothing in particular, at the moment
 
+    
 def diceRoll(num):
   sum = 0
   for n in range(0, num):
@@ -109,11 +111,12 @@ class Player(Sprite):
       print("Invalid move. Returning...")
       self.map.show()
       return True
-    if (self.map.world[y][x] == "#"):
-      battle(x, y)
-      #Place battle code here
-      self.map.show()
-      return True
+    for e in enemyList:
+      if (self.map.world[y][x] == e):
+        battle(x, y)
+        #Place battle code here
+        self.map.show()
+        return True
     if (self.map.world[y][x] == "*"):
       impObjIndex = 0
       for i in range(0, len(self.map.renderList)):
@@ -196,15 +199,25 @@ for i in range(0, 10):
 pl = Player(1, 1, 0)
 for i in range(0, len(imps)):
   world.registerRender(imps[i])
-world.registerRender(pl)
+
+enemyList = ['#']
 fh = open('modlist.txt', "r")
-modlist = []
 for line in fh:
   i = importlib.import_module(line.replace('\n', '').replace('.py', ''))
   print(globals())
   info = eval("i." + line.replace('\n', '').replace('.py', '') + ".info()")
   modobj = eval("i." + line.replace('\n', '').replace('.py', '') + "(" + str(info[1]) + "," + str(info[2]) + "," + str(info[3]) + ")")
   world.registerRender(modobj)
+  if (modobj.isEnemy):
+    enemyList.append(modobj.char)
+
+world.registerRender(pl)
+
+
+
+
+
+
 
 def handleInput():
     cmd = input(": ")
@@ -247,7 +260,7 @@ def battle(objx, objy):
   print("====================")
   print("=      BATTLE      =")
   print("====================")
-  print("=      Imp HP      =")
+  print("=     Enemy HP     =")
   print("=        " + str(world.renderList[impObjIndex].hp) + "         =")
   print("=     PlayerHP     =")
   print("=        " + str(pl.hp) + "         =")
@@ -261,7 +274,7 @@ def battle(objx, objy):
     dfcBlock = diceRoll(pl.dfc) -1
     if ((world.renderList[impObjIndex].dmg - dfcBlock) >= 0):
       pl.hp -= world.renderList[impObjIndex].dmg - dfcBlock
-      print("Imp did " + str(world.renderList[impObjIndex].dmg - dfcBlock) + " damage.")
+      print("Enemy did " + str(world.renderList[impObjIndex].dmg - dfcBlock) + " damage.")
     world.renderList[impObjIndex].hp -= pl.basedmg + atkDmg
     print("Player did " + str(pl.basedmg + atkDmg) + " damage.")
     if (world.renderList[impObjIndex].hp <= 0):
@@ -273,6 +286,7 @@ def battle(objx, objy):
     battle(objx, objy)
 
 def stats():
+  print("      LEVEL: " + str(pl.level) + "      ")
   print("       ATK: " + str(pl.atk) + "       ")
   print("       DFC: " + str(pl.dfc) + "       ")
   print("       HP: " + str(pl.hp) + "       ")
