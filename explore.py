@@ -1,6 +1,11 @@
 #ENGINE CODE HERE =============================================================================================================================================================================================================
 import random
 import time
+import importlib
+import os
+import sys
+root = os.path.dirname(__file__)
+sys.path.append(root + "\\mods\\")
 class NotWorld:
   def __init__(self):
     self.world = [[1, 2, 3],
@@ -44,7 +49,8 @@ class NotWorld:
     sprite.map = self
   def render(self):
     for s in range(0, len(self.renderList)):
-      self.renderList[s].tick()
+      if (not self.renderList[s].isXP):
+        self.renderList[s].tick()
       x = self.renderList[s].x
       y = self.renderList[s].y
       char = self.renderList[s].char
@@ -52,14 +58,16 @@ class NotWorld:
     self.show()
 
 class Sprite:
-  def __init__(self, char, x, y):
+  def __init__(self, x, y, XP):
     self.x = x
     self.y = y
-    self.char = char
+    self.char = " "
+    self.XP = XP
     self.map = None
     self.cache = " "
     self.cachex = x
     self.cachey = y
+    self.isXP = False
   def translate(self, x, y):
     self.map.world[self.cachey][self.cachex] = self.cache
     self.cachex = x
@@ -67,9 +75,13 @@ class Sprite:
     self.cache = self.map.world[y][x]
     self.x = x
     self.y = y
+  def convertXP(self):
+    self.char = "*"
+    self.isXP = True
   def tick(self):
     2+2
     #do nothing in particular, at the moment
+
 def diceRoll(num):
   sum = 0
   for n in range(0, num):
@@ -77,10 +89,11 @@ def diceRoll(num):
   return sum
 #ACTUAL GAME CODE =============================================================================================================================================================================================================
 class Player(Sprite):
-  def __init__(self, char, x, y):
-    Sprite.__init__(self, char, x, y)
+  def __init__(self, x, y, XP):
+    Sprite.__init__(self, x, y, XP)
     self.maxhp = 10
     self.hp = 10
+    self.char = "@"
     self.basedmg = 1
     self.atk = 1
     self.dfc = 1
@@ -102,8 +115,14 @@ class Player(Sprite):
       self.map.show()
       return True
     if (self.map.world[y][x] == "*"):
-      self.giveXP(1)
-      print("1 xp given!")
+      impObjIndex = 0
+      for i in range(0, len(self.map.renderList)):
+        if (self.map.renderList[i].x == x):
+          if (self.map.renderList[i].y == y):
+            impObjIndex = i
+      self.giveXP(self.map.renderList[impObjIndex].XP)
+      print(str(self.map.renderList[impObjIndex].XP) + " xp given!")
+      del self.map.renderList[impObjIndex]
       self.map.world[y][x] = " "
       self.map.show()
     if (self.map.world[y][x] == "@"):
@@ -145,10 +164,11 @@ class Player(Sprite):
       self.xp -= self.xpNeeded
       self.xpNeeded *= self.level
 class Imp(Sprite):
-  def __init__(self, char, x, y):
-    Sprite.__init__(self, char, x, y)
+  def __init__(self, x, y, XP):
+    Sprite.__init__(self, x, y, XP)
     self.hp = 10
     self.dmg = 1
+    self.char = "#"
   def tick(self):
     
     targetx = self.x + random.randint(-1, 1)
@@ -172,11 +192,20 @@ for i in range(0, 10):
     print("Imp intersected player or wall")
     #do nothing
   else:
-    imps.append(Imp("#", randx, randy))
-pl = Player("@", 1, 1)
+    imps.append(Imp(randx, randy, 1))
+pl = Player(1, 1, 0)
 for i in range(0, len(imps)):
   world.registerRender(imps[i])
 world.registerRender(pl)
+fh = open('modlist.txt', "r")
+modlist = []
+for line in fh:
+  i = importlib.import_module(line.replace('\n', '').replace('.py', ''))
+  print(globals())
+  info = eval("i." + line.replace('\n', '').replace('.py', '') + ".info()")
+  modobj = eval("i." + line.replace('\n', '').replace('.py', '') + "(" + str(info[1]) + "," + str(info[2]) + "," + str(info[3]) + ")")
+  world.registerRender(modobj)
+
 def handleInput():
     cmd = input(": ")
     if (cmd == "w"):
@@ -190,6 +219,8 @@ def handleInput():
     
     if (cmd == "d"):
       pl.move(pl.x + 1, pl.y)
+    if (cmd == ""):
+      world.render()
     if (cmd == "imps"):
       print(len(imps))
       world.show() 
@@ -220,7 +251,9 @@ def battle(objx, objy):
   print("=        " + str(world.renderList[impObjIndex].hp) + "         =")
   print("=     PlayerHP     =")
   print("=        " + str(pl.hp) + "         =")
-  cmd = input("=    ATK    RUN    =")
+  print("\n\n\n\n\n\n\n\n")
+  cmd = input("=    ATK    RUN    =\n")
+  print("\n\n\n\n")
   if (cmd == "run"):
     2+2
   if (cmd == "atk"):
@@ -232,8 +265,8 @@ def battle(objx, objy):
     world.renderList[impObjIndex].hp -= pl.basedmg + atkDmg
     print("Player did " + str(pl.basedmg + atkDmg) + " damage.")
     if (world.renderList[impObjIndex].hp <= 0):
-      world.world[objy][objx] = "*"
-      del world.renderList[impObjIndex]
+      world.renderList[impObjIndex].convertXP()
+      world.render()
       return
     battle(objx, objy)
   else:
