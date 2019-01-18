@@ -151,8 +151,8 @@ class Player(Sprite):
     if (cmd == "dfc"):
       self.dfc += 1
     if (cmd == "hp"):
-      self.hp += 5
       self.maxhp += 5
+      self.hp = self.maxhp
     print("====================")
     print("=    New Stats:    =")
     print("====================")
@@ -166,6 +166,30 @@ class Player(Sprite):
       self.levelUp()
       self.xp -= self.xpNeeded
       self.xpNeeded *= self.level
+  def save(self, num):
+    save = []
+    save.append(self.level)
+    save.append(self.atk)
+    save.append(self.dfc)
+    save.append(self.hp)
+    save.append(self.maxhp)
+    save.append(self.xp)
+    savefile = open(".\\saves\\" + str(num) + ".txt", "w")
+    savefile.write(str(save))
+    savefile.close()
+  def load(self, num):
+    save = []
+    savefile = open(".\\saves\\" + str(num) + ".txt", "r")
+    savestr = savefile.read()
+    save = savestr.replace("[", "").replace("]", "").replace(" ", "").split(",")
+    for s in range(0, len(save)):
+      save[s] = int(save[s])
+    self.level = save[0]
+    self.atk = save[1]
+    self.dfc = save[2]
+    self.hp = save[3]
+    self.maxhp = save[4]
+    self.xp = save[5]
 class Imp(Sprite):
   def __init__(self, x, y, XP):
     Sprite.__init__(self, x, y, XP)
@@ -204,7 +228,6 @@ enemyList = ['#']
 fh = open('modlist.txt', "r")
 for line in fh:
   i = importlib.import_module(line.replace('\n', '').replace('.py', ''))
-  print(globals())
   info = eval("i." + line.replace('\n', '').replace('.py', '') + ".info()")
   modobj = eval("i." + line.replace('\n', '').replace('.py', '') + "(" + str(info[1]) + "," + str(info[2]) + "," + str(info[3]) + ")")
   world.registerRender(modobj)
@@ -248,6 +271,14 @@ def handleInput():
       exit()
     if (cmd == "help"):
       help()
+      input()
+    if (cmd == "save"):
+      stats()
+      pl.save(input("  Enter save slot:  \n"))
+      world.show()
+    if (cmd == "load"):
+      pl.load(input("  Enter load slot:  \n"))
+      stats()
       input()
       world.show()
     handleInput()
