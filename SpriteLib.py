@@ -10,6 +10,7 @@ class Sprite:
     self.cachey = y
     self.isXP = False
     self.isEnemy = False
+    self.isInteractive = False
   def translate(self, x, y):
     self.map.world[self.cachey][self.cachex] = self.cache
     self.cachex = x
@@ -23,3 +24,6 @@ class Sprite:
   def tick(self):
     2+2
     #do nothing in particular, at the moment
+  def handleInteract(self, pl):
+    2+2
+    #Still do nothing, unless needed

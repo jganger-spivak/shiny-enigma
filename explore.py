@@ -69,6 +69,7 @@ class Sprite:
     self.cachey = y
     self.isXP = False
     self.isEnemy = False
+    self.isInteractive = False
   def translate(self, x, y):
     self.map.world[self.cachey][self.cachex] = self.cache
     self.cachex = x
@@ -82,6 +83,9 @@ class Sprite:
   def tick(self):
     2+2
     #do nothing in particular, at the moment
+  def handleInteract(self, pl):
+    2+2
+    #Still do nothing, unless needed
 
     
 def diceRoll(num):
@@ -117,6 +121,10 @@ class Player(Sprite):
         #Place battle code here
         self.map.show()
         return True
+    for e in interactList:
+      if (self.map.world[y][x] == e):
+        interact(x, y)
+        self.map.show()
     if (self.map.world[y][x] == "*"):
       impObjIndex = 0
       for i in range(0, len(self.map.renderList)):
@@ -190,6 +198,7 @@ class Player(Sprite):
     self.hp = save[3]
     self.maxhp = save[4]
     self.xp = save[5]
+    self.xpNeeded = 10 * save[0]
 class Imp(Sprite):
   def __init__(self, x, y, XP):
     Sprite.__init__(self, x, y, XP)
@@ -225,6 +234,7 @@ for i in range(0, len(imps)):
   world.registerRender(imps[i])
 
 enemyList = ['#']
+interactList = []
 fh = open('modlist.txt', "r")
 for line in fh:
   i = importlib.import_module(line.replace('\n', '').replace('.py', ''))
@@ -233,6 +243,8 @@ for line in fh:
   world.registerRender(modobj)
   if (modobj.isEnemy):
     enemyList.append(modobj.char)
+  if (modobj.isInteractive):
+    interactList.append(modobj.char)
 
 world.registerRender(pl)
 
@@ -272,6 +284,7 @@ def handleInput():
     if (cmd == "help"):
       help()
       input()
+      world.show()
     if (cmd == "save"):
       stats()
       pl.save(input("  Enter save slot:  \n"))
@@ -299,7 +312,13 @@ def battle(objx, objy):
   cmd = input("=    ATK    RUN    =\n")
   print("\n\n\n\n")
   if (cmd == "run"):
-    2+2
+    atkDmg = diceRoll(pl.atk)
+    if (atkDmg*3 >= world.renderList[impObjIndex].hp):
+        print("Ran away successfully")
+        return
+    else:
+        print("Failed. -1*lvl HP.")
+        pl.hp -= pl.level
   if (cmd == "atk"):
     atkDmg = diceRoll(pl.atk)
     dfcBlock = diceRoll(pl.dfc) -1
@@ -315,7 +334,12 @@ def battle(objx, objy):
     battle(objx, objy)
   else:
     battle(objx, objy)
-
+def interact(objx, objy):
+  objIndex = 0
+  for i in range(0, len(world.renderList)):
+    if (world.renderList[i].x == objx):
+      if (world.renderList[i].y == objy):
+        world.renderList[i].handleInteract(pl)
 def stats():
   print("      LEVEL: " + str(pl.level) + "      ")
   print("       ATK: " + str(pl.atk) + "       ")
