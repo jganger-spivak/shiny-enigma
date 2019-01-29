@@ -4,6 +4,7 @@ import time
 import importlib
 import os
 import sys
+import pickle
 root = os.path.dirname(__file__)
 sys.path.append(root + "\\mods\\")
 class NotWorld:
@@ -80,6 +81,8 @@ class Sprite:
     self.isXP = False
     self.isEnemy = False
     self.isInteractive = False
+    self.isEquippable = False
+    self.equipped = False
     self.title = "GenericSprite"
     self.pickedUp = False
   def translate(self, x, y):
@@ -100,6 +103,9 @@ class Sprite:
     #Still do nothing, unless needed
   def use(self, pl):
     2+2
+  def loaded(self, pl):
+    2+2
+    #This isn't the same as init. Just something to refresh pl values with when loaded from file.
 
     
 def diceRoll(num):
@@ -116,6 +122,8 @@ class Player(Sprite):
     self.char = "@"
     self.basedmg = 1
     self.atk = 1
+    self.atkplus = 0
+    self.dfcplus = 0
     self.dfc = 1
     self.xp = 0
     self.xpNeeded = 10
@@ -197,10 +205,15 @@ class Player(Sprite):
     save.append(self.hp)
     save.append(self.maxhp)
     save.append(self.xp)
+    save.append(len(self.inventory))
     
     savefile = open(".\\saves\\" + str(num) + ".txt", "w")
     savefile.write(str(save))
     savefile.close()
+    for i in range(0, len(self.inventory)):
+      invfile = open(".\\saves\\" + str(num) + "inv" + str(i) + ".dat", "wb")
+      pickle.dump(self.inventory[i], invfile)
+      invfile.close()
   def load(self, num):
     save = []
     savefile = open(".\\saves\\" + str(num) + ".txt", "r")
@@ -215,6 +228,11 @@ class Player(Sprite):
     self.maxhp = save[4]
     self.xp = save[5]
     self.xpNeeded = 10 * save[0]
+    for i in range(0, save[6]):
+      invfile = open(".\\saves\\" + str(num) + "inv" + str(i) + ".dat", "rb")
+      pl.pickup(pickle.load(invfile))
+      pl.inventory[i].loaded(pl)
+      invfile.close()
   def pickup(self, obj):
     self.inventory.append(obj)
 class Imp(Sprite):
@@ -311,12 +329,15 @@ def handleInput():
     if (cmd == "load"):
       pl.load(input("  Enter load slot:  \n"))
       stats()
+      inventory()
       input()
       world.show()
     if (cmd == "inv"):
       inventory()
     if (cmd.split(" ")[0] == "use"):
       pl.inventory[int(cmd.split(" ")[1])].use(pl)
+      if not pl.inventory[int(cmd.split(" ")[1])].isEquippable:
+        del pl.inventory[int(cmd.split(" ")[1])]
     handleInput()
 def battle(objx, objy):
   impObjIndex = 0
@@ -343,7 +364,7 @@ def battle(objx, objy):
         print("Failed. -1*lvl HP.")
         pl.hp -= pl.level
   if (cmd == "atk"):
-    atkDmg = diceRoll(pl.atk)
+    atkDmg = diceRoll(pl.atk) + pl.atkplus
     dfcBlock = diceRoll(pl.dfc) -1
     if ((world.renderList[impObjIndex].dmg - dfcBlock) >= 0):
       pl.hp -= world.renderList[impObjIndex].dmg - dfcBlock
@@ -365,8 +386,8 @@ def interact(objx, objy):
         world.renderList[i].handleInteract(pl)
 def stats():
   print("      LEVEL: " + str(pl.level) + "      ")
-  print("       ATK: " + str(pl.atk) + "       ")
-  print("       DFC: " + str(pl.dfc) + "       ")
+  print("       ATK: " + str(pl.atk) + "d+" + str(pl.atkplus) + "     ")
+  print("       DFC: " + str(pl.dfc) + "d+" + str(pl.dfcplus) + "     ")
   print("       HP: " + str(pl.hp) + "       ")
   print("       XP: " + str(pl.xp) + "       ")
   print("XP to next level:" + str(pl.xpNeeded - pl.xp) + "   ")

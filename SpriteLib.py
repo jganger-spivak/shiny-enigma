@@ -11,6 +11,8 @@ class Sprite:
     self.isXP = False
     self.isEnemy = False
     self.isInteractive = False
+    self.isEquippable = False
+    self.equipped = False
     self.title = "GenericSprite"
     self.pickedUp = False
   def translate(self, x, y):
@@ -31,3 +33,6 @@ class Sprite:
     #Still do nothing, unless needed
   def use(self, pl):
     2+2
+  def loaded(self, pl):
+    2+2
+    #This isn't the same as init. Just something to refresh pl values with when loaded from file.
