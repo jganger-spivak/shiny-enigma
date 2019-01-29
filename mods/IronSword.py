@@ -1,16 +1,16 @@
 from SpriteLib import Sprite
 import random
 
-class RedPotionItem(Sprite):
+class IronSword(Sprite):
     def __init__(self, x, y, XP):
         Sprite.__init__(self, x, y, XP)
-        self.char = "!"
+        self.char = "1"
         self.XP = 0
         self.hasInit = False
         self.isInteractive = True
-        self.title = "  Health Potion +5  "
-        self.x = 3
-        self.y = 3
+        self.isEquippable = True
+        self.equipped = False
+        self.title = "   Iron Sword +2    "
     def info():
         return ["nope", 0, 0, 0]
         #This doesn't actually mean anything, just has to be valid to instansiate the class
@@ -27,6 +27,14 @@ class RedPotionItem(Sprite):
         pl.pickup(self)
         self.pickedUp = True
     def use(self, pl):
-        pl.hp += 5
-        if pl.hp > pl.maxhp:
-            pl.hp = pl.maxhp
+        if not self.equipped:
+            pl.atkplus += 2
+            self.equipped = not self.equipped
+            self.title = "E  Iron Sword +2    "
+        else:
+            pl.atkplus -= 2
+            self.equipped = not self.equipped
+            self.title = "   Iron Sword +2    "
+    def loaded(self, pl):
+        if self.equipped:
+            pl.atkplus += 2

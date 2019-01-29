@@ -9,4 +9,3 @@ class TestObj(Sprite):
         self.XP = 0
     def info():
         return ["$", 2, 2, 0]
-    
