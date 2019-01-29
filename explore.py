@@ -13,6 +13,7 @@ class NotWorld:
                  [7, 8, 9]]
     self.renderList = []
     self.size = 3
+    self.pl = None
   def gen(self, size):
     world = [" "] * size
     for i in range(0, len(world)):
@@ -48,13 +49,22 @@ class NotWorld:
     self.renderList.append(sprite)
     sprite.map = self
   def render(self):
-    for s in range(0, len(self.renderList)):
+    spriteForDeletion = None
+    renderListLength = len(self.renderList)
+    for s in range(0, renderListLength):
+      if (self.renderList[s].pickedUp):
+        spriteForDeletion = s
       if (not self.renderList[s].isXP):
         self.renderList[s].tick()
       x = self.renderList[s].x
       y = self.renderList[s].y
       char = self.renderList[s].char
       self.world[y][x] = char
+    if (not spriteForDeletion == None):
+      x = self.renderList[spriteForDeletion].x
+      y = self.renderList[spriteForDeletion].y
+      self.pl.cache = " "
+      del self.renderList[spriteForDeletion]
     self.show()
 
 class Sprite:
@@ -70,6 +80,8 @@ class Sprite:
     self.isXP = False
     self.isEnemy = False
     self.isInteractive = False
+    self.title = "GenericSprite"
+    self.pickedUp = False
   def translate(self, x, y):
     self.map.world[self.cachey][self.cachex] = self.cache
     self.cachex = x
@@ -86,6 +98,8 @@ class Sprite:
   def handleInteract(self, pl):
     2+2
     #Still do nothing, unless needed
+  def use(self, pl):
+    2+2
 
     
 def diceRoll(num):
@@ -106,6 +120,7 @@ class Player(Sprite):
     self.xp = 0
     self.xpNeeded = 10
     self.level = 1
+    self.inventory = []
   def move(self, x, y):
     if (self.map.world[y][x] == "%"):
       print("Invalid move. Returning...")
@@ -182,6 +197,7 @@ class Player(Sprite):
     save.append(self.hp)
     save.append(self.maxhp)
     save.append(self.xp)
+    
     savefile = open(".\\saves\\" + str(num) + ".txt", "w")
     savefile.write(str(save))
     savefile.close()
@@ -199,6 +215,8 @@ class Player(Sprite):
     self.maxhp = save[4]
     self.xp = save[5]
     self.xpNeeded = 10 * save[0]
+  def pickup(self, obj):
+    self.inventory.append(obj)
 class Imp(Sprite):
   def __init__(self, x, y, XP):
     Sprite.__init__(self, x, y, XP)
@@ -230,6 +248,7 @@ for i in range(0, 10):
   else:
     imps.append(Imp(randx, randy, 1))
 pl = Player(1, 1, 0)
+world.pl = pl
 for i in range(0, len(imps)):
   world.registerRender(imps[i])
 
@@ -294,6 +313,10 @@ def handleInput():
       stats()
       input()
       world.show()
+    if (cmd == "inv"):
+      inventory()
+    if (cmd.split(" ")[0] == "use"):
+      pl.inventory[int(cmd.split(" ")[1])].use(pl)
     handleInput()
 def battle(objx, objy):
   impObjIndex = 0
@@ -367,5 +390,13 @@ def help():
   print("run:Attempt to flee")
   print("====================")
   print("     (c) 2019       ")
+def inventory():
+  print("====================")
+  print("=    INVENTORY:    =")
+  print("====================")
+  for i in range(0, len(pl.inventory)):
+    print(str(i) + ": "  + pl.inventory[i].title)
+  print("====================")
+  
 world.render()
 handleInput()

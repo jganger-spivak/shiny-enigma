@@ -11,6 +11,8 @@ class Sprite:
     self.isXP = False
     self.isEnemy = False
     self.isInteractive = False
+    self.title = "GenericSprite"
+    self.pickedUp = False
   def translate(self, x, y):
     self.map.world[self.cachey][self.cachex] = self.cache
     self.cachex = x
@@ -27,3 +29,5 @@ class Sprite:
   def handleInteract(self, pl):
     2+2
     #Still do nothing, unless needed
+  def use(self, pl):
+    2+2
