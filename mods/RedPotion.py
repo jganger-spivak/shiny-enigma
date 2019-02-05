@@ -12,14 +12,13 @@ class RedPotion(Sprite):
         return ["nope", 0, 0, 0]
     def tick(self):
         if not self.hasInit:
-            randx = random.randint(1, 19)
-            randy = random.randint(1, 19)
             while not self.hasInit:
-                if (randx == 1 or randy == 1) or (self.map.world[randy][randx] == "%"):
-                    2+2 #Do nothing
-                else:
-                    self.translate(randx, randy)
-                    self.hasInit = True
+                randx = random.randint(1, 19)
+                randy = random.randint(1, 19)
+                if (self.map.world[randy][randx] == " "):
+                   self.translate(randx, randy)
+                   self.hasInit = True
+                    
     def handleInteract(self, pl):
         pl.hp += 5
         if pl.hp > pl.maxhp:

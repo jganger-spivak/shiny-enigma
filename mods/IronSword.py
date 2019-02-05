@@ -4,22 +4,22 @@ import random
 class IronSword(Sprite):
     def __init__(self, x, y, XP):
         Sprite.__init__(self, x, y, XP)
-        self.char = "1"
+        self.char = "!"
         self.XP = 0
         self.hasInit = False
         self.isInteractive = True
         self.isEquippable = True
         self.equipped = False
-        self.title = "   Iron Sword +2    "
+        self.title = "   Iron Sword +2"
     def info():
         return ["nope", 0, 0, 0]
         #This doesn't actually mean anything, just has to be valid to instansiate the class
 
     def tick(self):
         if not self.hasInit:
-            randx = random.randint(1, 19)
-            randy = random.randint(1, 19)
             while not self.hasInit:
+                randx = random.randint(1, 19)
+                randy = random.randint(1, 19)
                 if (self.map.world[randy][randx] == " "):
                     self.translate(randx, randy)
                     self.hasInit = True

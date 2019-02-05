@@ -17,9 +17,9 @@ class RedPotionItem(Sprite):
 
     def tick(self):
         if not self.hasInit:
-            randx = random.randint(1, 19)
-            randy = random.randint(1, 19)
             while not self.hasInit:
+                randx = random.randint(1, 19)
+                randy = random.randint(1, 19)
                 if (self.map.world[randy][randx] == " "):
                     self.translate(randx, randy)
                     self.hasInit = True
