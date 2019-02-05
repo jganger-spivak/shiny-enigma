@@ -5,6 +5,10 @@ import importlib
 import os
 import sys
 import pickle
+from collections import OrderedDict
+from SpriteLib import Sprite
+import pygame
+
 root = os.path.dirname(__file__)
 sys.path.append(root + "\\mods\\")
 class NotWorld:
@@ -15,6 +19,7 @@ class NotWorld:
     self.renderList = []
     self.size = 3
     self.pl = None
+    self.graphic = False
   def gen(self, size):
     world = [" "] * size
     for i in range(0, len(world)):
@@ -23,6 +28,9 @@ class NotWorld:
     self.size = size
     return world
   def show(self):
+    if self.graphic:
+      graphicRender(self.world)
+      return
     for i in self.world:
       print(''.join(i))
   def fill(self):
@@ -68,46 +76,6 @@ class NotWorld:
       del self.renderList[spriteForDeletion]
     self.show()
 
-class Sprite:
-  def __init__(self, x, y, XP):
-    self.x = x
-    self.y = y
-    self.char = " "
-    self.XP = XP
-    self.map = None
-    self.cache = " "
-    self.cachex = x
-    self.cachey = y
-    self.isXP = False
-    self.isEnemy = False
-    self.isInteractive = False
-    self.isEquippable = False
-    self.equipped = False
-    self.title = "GenericSprite"
-    self.pickedUp = False
-  def translate(self, x, y):
-    self.map.world[self.cachey][self.cachex] = self.cache
-    self.cachex = x
-    self.cachey = y
-    self.cache = self.map.world[y][x]
-    self.x = x
-    self.y = y
-  def convertXP(self):
-    self.char = "*"
-    self.isXP = True
-  def tick(self):
-    2+2
-    #do nothing in particular, at the moment
-  def handleInteract(self, pl):
-    2+2
-    #Still do nothing, unless needed
-  def use(self, pl):
-    2+2
-  def loaded(self, pl):
-    2+2
-    #This isn't the same as init. Just something to refresh pl values with when loaded from file.
-
-    
 def diceRoll(num):
   sum = 0
   for n in range(0, num):
@@ -234,6 +202,9 @@ class Player(Sprite):
       pl.inventory[i].loaded(pl)
       invfile.close()
   def pickup(self, obj):
+    if len(self.inventory) >= 10:
+      print("Inventory full :(")
+      return
     self.inventory.append(obj)
 class Imp(Sprite):
   def __init__(self, x, y, XP):
@@ -256,6 +227,7 @@ class Imp(Sprite):
 world = NotWorld()
 world.gen(20)
 world.fill()
+world.graphic = True #ENABLES PYGAME GRAPHICS
 imps = []
 for i in range(0, 10):
   randx = random.randint(1, 19)
@@ -282,6 +254,15 @@ for line in fh:
     enemyList.append(modobj.char)
   if (modobj.isInteractive):
     interactList.append(modobj.char)
+  interactList = list(OrderedDict.fromkeys(interactList))
+
+if world.graphic:
+  pygame.init()
+  screen = pygame.display.set_mode((640, 640))
+  screen.fill((255, 255, 255))
+  grass = pygame.image.load('grass.png').convert()
+  char = pygame.image.load('char.png').convert()
+  imp = pygame.image.load('imp.png').convert()
 
 world.registerRender(pl)
 
@@ -335,10 +316,12 @@ def handleInput():
     if (cmd == "inv"):
       inventory()
     if (cmd.split(" ")[0] == "use"):
-      pl.inventory[int(cmd.split(" ")[1])].use(pl)
-      if not pl.inventory[int(cmd.split(" ")[1])].isEquippable:
-        del pl.inventory[int(cmd.split(" ")[1])]
-    handleInput()
+      try:
+        pl.inventory[int(cmd.split(" ")[1])].use(pl)
+        if not pl.inventory[int(cmd.split(" ")[1])].isEquippable:
+          del pl.inventory[int(cmd.split(" ")[1])]
+      except IndexError:
+        print("Item not found :(")
 def battle(objx, objy):
   impObjIndex = 0
   for i in range(0, len(world.renderList)):
@@ -418,6 +401,60 @@ def inventory():
   for i in range(0, len(pl.inventory)):
     print(str(i) + ": "  + pl.inventory[i].title)
   print("====================")
-  
+
+def graphicRender(table):
+    for x, row in enumerate(table):
+        for y, tile in enumerate(row):
+            if (table[y][x] == ' '):
+                screen.blit(grass, (x*32, y*32))
+            elif (table[y][x] == '@'):
+                screen.blit(char, (x*32, y*32))
+            elif (table[y][x] == '#'):
+                screen.blit(imp, (x*32, y*32))
+    pygame.display.update()
+
+def pygameMain():
+  done = False
+  useItem = False
+  while not done:
+    for event in pygame.event.get():
+      if event.type == pygame.QUIT:
+        done = True
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_w:
+          pl.move(pl.x, pl.y - 1)
+        if event.key == pygame.K_a:
+          pl.move(pl.x - 1, pl.y)
+        if event.key == pygame.K_s:
+          pl.move(pl.x, pl.y + 1)
+        if event.key == pygame.K_d:
+          pl.move(pl.x + 1, pl.y)
+        if event.key == pygame.K_i:
+          inventory()
+          stats()
+        if event.key == pygame.K_u:
+          print("Type the index of the item you want to use:")
+          useItem = True
+        else:
+          if useItem:
+            try:
+              invIndex = int(event.unicode)
+              try:
+                pl.inventory[invIndex].use(pl)
+                if not pl.inventory[invIndex].isEquippable:
+                  del pl.inventory[invIndex]
+                useItem = False
+              except IndexError:
+                print("Item not found :(")
+            except TypeError:
+              print("Not a number. Try again")
+      
 world.render()
-handleInput()
+
+if world.graphic:
+  pygameMain()
+  pygame.quit()
+  exit()
+else:
+  while True:
+    handleInput()
