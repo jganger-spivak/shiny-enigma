@@ -11,6 +11,7 @@ class RedPotionItem(Sprite):
         self.title = "  Health Potion +5  "
         self.x = 3
         self.y = 3
+        self.texture = "item.png"
     def info():
         return ["nope", 0, 0, 0]
         #This doesn't actually mean anything, just has to be valid to instansiate the class
