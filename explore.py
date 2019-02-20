@@ -108,8 +108,11 @@ class Player(Sprite):
       return True
     for e in enemyList:
       if (self.map.world[y][x] == e):
-        battle(x, y)
-        #Place battle code here
+        if not world.graphic:
+          battle(x, y)
+        else:
+          state == 'battle'
+          pygameBattle(x, y)
         self.map.show()
         return True
     for e in interactList:
@@ -227,7 +230,8 @@ class Imp(Sprite):
 world = NotWorld()
 world.gen(20)
 world.fill()
-world.graphic = True #ENABLES PYGAME GRAPHICS
+world.graphic = True #ENABLES PYGAME
+state = 'freeroam'
 imps = []
 for i in range(0, 10):
   randx = random.randint(1, 19)
@@ -244,6 +248,16 @@ for i in range(0, len(imps)):
 
 enemyList = ['#']
 interactList = []
+charTextures = {}
+if world.graphic:
+  pygame.init()
+  screen = pygame.display.set_mode((640, 640))
+  screen.fill((255, 255, 255))
+  grass = pygame.image.load('grass.png').convert()
+  char = pygame.image.load('char.png').convert()
+  imp = pygame.image.load('imp.png').convert()
+  wall = pygame.image.load('wall.png').convert()
+  font = pygame.font.SysFont('Arial', 24)
 fh = open('modlist.txt', "r")
 for line in fh:
   i = importlib.import_module(line.replace('\n', '').replace('.py', ''))
@@ -254,15 +268,14 @@ for line in fh:
     enemyList.append(modobj.char)
   if (modobj.isInteractive):
     interactList.append(modobj.char)
-  interactList = list(OrderedDict.fromkeys(interactList))
+  if modobj.char not in charTextures:
+    try:
+      charTextures[modobj.char] = pygame.image.load(modobj.texture).convert()
+    except AttributeError:
+      charTextures[modobj.char] = pygame.image.load('default.png').convert()
+  interactList = list(OrderedDict.fromkeys(interactList)) #I know this looks weird but all it really does is erase duplicate items
 
-if world.graphic:
-  pygame.init()
-  screen = pygame.display.set_mode((640, 640))
-  screen.fill((255, 255, 255))
-  grass = pygame.image.load('grass.png').convert()
-  char = pygame.image.load('char.png').convert()
-  imp = pygame.image.load('imp.png').convert()
+
 
 world.registerRender(pl)
 
@@ -411,6 +424,12 @@ def graphicRender(table):
                 screen.blit(char, (x*32, y*32))
             elif (table[y][x] == '#'):
                 screen.blit(imp, (x*32, y*32))
+            elif (table[y][x] == "%"):
+                screen.blit(wall, (x*32, y*32))
+            for key in charTextures.keys():
+                if (table[y][x] == key):
+                    screen.blit(charTextures[key], (x*32, y*32))
+    screen.blit(wall, (0, 0))
     pygame.display.update()
 
 def pygameMain():
@@ -420,7 +439,9 @@ def pygameMain():
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         done = True
-      if event.type == pygame.KEYDOWN:
+      if state == 'battle':
+        pygameBattle()
+      elif event.type == pygame.KEYDOWN:
         if event.key == pygame.K_w:
           pl.move(pl.x, pl.y - 1)
         if event.key == pygame.K_a:
@@ -448,6 +469,42 @@ def pygameMain():
                 print("Item not found :(")
             except TypeError:
               print("Not a number. Try again")
+
+def pygameBattle(objx, objy):
+  done = False
+  impObjIndex = 0
+  selectedButton = 0
+  for i in range(0, len(world.renderList)):
+    if (world.renderList[i].x == objx):
+      if (world.renderList[i].y == objy):
+        impObjIndex = i
+  
+  while not done:
+    #Battle window
+    pygame.draw.rect(screen, (168, 168, 168), pygame.Rect(0, 0, 320, 320))
+    pygame.draw.rect(screen, (200, 200, 200), pygame.Rect(20, 20, 280, 280))
+    screen.blit(font.render("BATTLE", False, (230, 0, 0)), (123, 20))
+    #Attack + Run buttons
+    if selectedButton == 0:
+      pygame.draw.rect(screen, (230, 168, 168), pygame.Rect(52, 236, 96, 32))
+      screen.blit(font.render("ATTACK", False, (0, 0, 0)), (62, 236))
+    elif selectedButton == 1:
+      pygame.draw.rect(screen, (230, 168, 168), pygame.Rect(180, 236, 96, 32))
+      screen.blit(font.render("RUN", False, (0, 0, 0)), (210, 236))
+    for event in pygame.event.get():
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_RIGHT:
+          if not selectedButton == 1:
+            selectedButton += 1
+        elif event.key == pygame.K_LEFT:
+          if not selectedButton == 0:
+            selectedButton -= 1
+        elif event.key == pygame.K_RETURN:
+          pass
+        else:
+          done = True
+          state == 'freeroam'
+      pygame.display.update()
       
 world.render()
 
