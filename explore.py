@@ -257,6 +257,7 @@ if world.graphic:
   char = pygame.image.load('char.png').convert()
   imp = pygame.image.load('imp.png').convert()
   wall = pygame.image.load('wall.png').convert()
+  bush = pygame.image.load('bush.png').convert()
   font = pygame.font.SysFont('Arial', 24)
 fh = open('modlist.txt', "r")
 for line in fh:
@@ -426,6 +427,8 @@ def graphicRender(table):
                 screen.blit(imp, (x*32, y*32))
             elif (table[y][x] == "%"):
                 screen.blit(wall, (x*32, y*32))
+            elif (table[y][x] == 'O'):
+                screen.blit(bush, (x*32, y*32))
             for key in charTextures.keys():
                 if (table[y][x] == key):
                     screen.blit(charTextures[key], (x*32, y*32))
@@ -500,7 +503,20 @@ def pygameBattle(objx, objy):
           if not selectedButton == 0:
             selectedButton -= 1
         elif event.key == pygame.K_RETURN:
-          pass
+          if selectedButton == 0:
+            atkDmg = diceRoll(pl.atk) + pl.atkplus
+            dfcBlock = diceRoll(pl.dfc) -1
+            if ((world.renderList[impObjIndex].dmg - dfcBlock) >= 0):
+                pl.hp -= world.renderList[impObjIndex].dmg - dfcBlock
+                screen.blit(font.render("Enemy did " + str(world.renderList[impObjIndex].dmg - dfcBlock) + " damage.", False, (0, 0, 0), (60, 50)))
+                #print("Enemy did " + str(world.renderList[impObjIndex].dmg - dfcBlock) + " damage.")
+                world.renderList[impObjIndex].hp -= pl.basedmg + atkDmg
+                #print("Player did " + str(pl.basedmg + atkDmg) + " damage.")
+            if (world.renderList[impObjIndex].hp <= 0):
+              world.renderList[impObjIndex].convertXP()
+              world.render()
+              return
+            pygameBattle(objx, objy)
         else:
           done = True
           state == 'freeroam'
